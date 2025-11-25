@@ -128,3 +128,7 @@ Primero compruebo que la camara este funcionando correctamente, luego el `new Te
 
 ### Resultado
 
+[image](/images/solucion.png)
+
+- La imagen se guardo en Fotograma capturado y guardado en: `C:/Users/frann/AppData/LocalLow/DefaultCompany/Delegados, Eventos/captura_20251125_092522.png`
+
