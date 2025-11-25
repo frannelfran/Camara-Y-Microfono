@@ -61,41 +61,70 @@ public class CapturadorAudio : MonoBehaviour
     private bool isRecording = false;
 
     void Start()
-    {
-        audioSource = gameObject.AddComponent<AudioSource>();
-        micDevice = Microphone.devices.Length > 0 ? Microphone.devices[0] : null;
+**Resumen (breve) — qué hace `CapturarFotograma`**
 
-        if (micDevice == null)
-        {
-            Debug.LogWarning("No microphone detected.");
-        }
-    }
+- Comprueba que la `WebCamTexture` está disponible y reproduciéndose.
+- Crea una `Texture2D` con las mismas dimensiones, copia los píxeles del frame actual y aplica los cambios.
+- Convierte la textura a PNG (`EncodeToPNG`) y guarda el archivo en `Application.persistentDataPath` usando `File.WriteAllBytes`.
+- Logea en consola la ruta del fichero guardado.
 
-    void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.R) && micDevice != null)
-        {
-            if (!isRecording)
-            {
-                audioSource.clip = Microphone.Start(micDevice, false, 10, 44100);
-                audioSource.loop = false;
+Notas: uso puntual (coste en rendimiento al obtener píxeles), requiere `using System.IO;` para escribir el fichero y debe ejecutarse en el hilo principal de Unity.
+
                 isRecording = true;
                 Debug.Log("Recording started...");
             }
-            else
-            {
-                Microphone.End(micDevice);
-                audioSource.Play();
-                isRecording = false;
-                Debug.Log("Playback started...");
-            }
-        }
-    }
-}
-```
+             ```csharp
+             void CapturarFotograma()
+                 {
+                     if (camaraTexture != null && camaraTexture.isPlaying)
+                     {
+                         Texture2D imagenCapturada = new Texture2D(camaraTexture.width, camaraTexture.height);
+                         imagenCapturada.SetPixels(camaraTexture.GetPixels());
+                         imagenCapturada.Apply();
 
-En la condición me aseguro de que esa funcionalidad sólo se utilice si se pulsa la tecla R y luego hago todo el procedimiento de almacenar el audio y luego mostrarlo.
+                         byte[] datosImagen = imagenCapturada.EncodeToPNG();
+                         string ruta = Application.persistentDataPath + "/captura_" + System.DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".png";
+                         File.WriteAllBytes(ruta, datosImagen);
+
+                         Debug.Log("Fotograma capturado y guardado en: " + ruta);
+                     }
+                 }
+             ```
+
+            **Resumen (muy breve):** captura el frame actual de la `WebCamTexture`, lo convierte a PNG y lo guarda en `Application.persistentDataPath` (requiere `using System.IO;`).
+```csharp
+camaraTexture = new WebCamTexture(nombreCamara);
+            rendererPantalla.material.mainTexture = camaraTexture;
+            camaraTexture.Play();
+```
 
 ### Resultado
 
-https://github.com/user-attachments/assets/439e88bd-2584-4f00-8956-aa46f9f8140d
+https://github.com/user-attachments/assets/8f01a129-44f3-46b1-a699-7183f6fd1868
+
+4. Debe ser posible capturar fotogramas aislados y conservarlos en memoria como imágenes fijas. Se debe crear un objeto para la textura, `Texture2D`, y pasarle la imagen-frame de la cámara como un bloque de píxeles y, finalmente, almacenar en un fichero dicha textura.
+
+Para esto, yo lo que hice fue si el usuario pulsa la tecla C se realiza lo siguiente:
+
+```csharp
+void CapturarFotograma()
+    {
+        if (camaraTexture != null && camaraTexture.isPlaying)
+        {
+            Texture2D imagenCapturada = new Texture2D(camaraTexture.width, camaraTexture.height);
+            imagenCapturada.SetPixels(camaraTexture.GetPixels());
+            imagenCapturada.Apply();
+
+            byte[] datosImagen = imagenCapturada.EncodeToPNG();
+            string ruta = Application.persistentDataPath + "/captura_" + System.DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".png";
+            File.WriteAllBytes(ruta, datosImagen);
+
+            Debug.Log("Fotograma capturado y guardado en: " + ruta);
+        }
+    }
+```
+
+Primero compruebo que la camara este funcionando correctamente, luego el `new Texture2D` crea una textura en memoria con las dimensiones del plano donde se encuentra alojada la cámara, luego copio los pixeles del frame acgtual y por último almaceno el .png en los datos del sistema.
+
+### Resultado
+
